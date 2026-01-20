@@ -74,12 +74,17 @@ class ResultDisplay extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Brightness: ${result.brightnessScore.toStringAsFixed(1)}',
+                      'Brightness: ${result.brightnessScore.toStringAsFixed(1)} (${result.brightnessLevel})',
                       style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Variance: ${result.varianceScore.toStringAsFixed(1)}',
+                      'Blur: ${result.blurScore.toStringAsFixed(1)} (${result.blurLevel})',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Color Variance: ${result.colorVarianceScore.toStringAsFixed(1)} (${result.colorVarianceLevel})',
                       style: const TextStyle(fontSize: 14),
                     ),
                   ],

@@ -271,21 +271,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Technical details
             Container(
-              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Brightness: ${_result!.brightnessScore.toStringAsFixed(1)}',
-                    style: const TextStyle(fontSize: 14),
+                  _buildMetricRow(
+                    'Brightness',
+                    _result!.brightnessScore.toStringAsFixed(1),
+                    _result!.brightnessLevel,
+                    _result!.brightnessLevel == 'Normal',
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Variance: ${_result!.varianceScore.toStringAsFixed(1)}',
-                    style: const TextStyle(fontSize: 14),
+                  const Divider(height: 16),
+                  _buildMetricRow(
+                    'Blur',
+                    _result!.blurScore.toStringAsFixed(1),
+                    _result!.blurLevel,
+                    _result!.blurLevel == 'Normal',
+                  ),
+                  const Divider(height: 16),
+                  _buildMetricRow(
+                    'Color Variance',
+                    _result!.colorVarianceScore.toStringAsFixed(1),
+                    _result!.colorVarianceLevel,
+                    _result!.colorVarianceLevel == 'Lots of colours',
                   ),
                 ],
               ),
@@ -316,6 +329,56 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMetricRow(String label, String score, String level, bool isGood) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                score,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isGood ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: isGood ? Colors.green : Colors.orange,
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  level,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isGood ? Colors.green[700] : Colors.orange[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
