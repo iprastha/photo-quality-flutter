@@ -1,16 +1,12 @@
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 import '../models/quality_result.dart';
+import '../models/analyzer_settings.dart';
 
 class QualityAnalyzer {
-  // Brightness thresholds (0-255 scale)
-  static const double _tooDarkThreshold = 50.0;
-  static const double _tooBrightThreshold = 200.0;
+  final AnalyzerSettings settings;
 
-  // Blur threshold (variance of Laplacian)
-  static const double _blurThreshold = 100.0; // Below this = too blur
-
-  // Color variance threshold (standard deviation)
-  static const double _lowColorVarianceThreshold = 20.0; // Below this = less colours
+  QualityAnalyzer({AnalyzerSettings? settings})
+      : settings = settings ?? AnalyzerSettings.defaults;
 
   /// Analyzes the quality of an image file
   /// Returns QualityResult with comprehensive quality metrics
@@ -77,9 +73,9 @@ class QualityAnalyzer {
 
   /// Determine brightness level based on score
   String _getBrightnessLevel(double score) {
-    if (score < _tooDarkThreshold) {
+    if (score < settings.tooDarkThreshold) {
       return 'Too dark';
-    } else if (score > _tooBrightThreshold) {
+    } else if (score > settings.tooBrightThreshold) {
       return 'Too bright';
     } else {
       return 'Normal';
@@ -109,7 +105,7 @@ class QualityAnalyzer {
 
   /// Determine blur level based on score
   String _getBlurLevel(double score) {
-    if (score < _blurThreshold) {
+    if (score < settings.blurThreshold) {
       return 'Too blur';
     } else {
       return 'Normal';
@@ -132,7 +128,7 @@ class QualityAnalyzer {
 
   /// Determine color variance level based on score
   String _getColorVarianceLevel(double score) {
-    if (score < _lowColorVarianceThreshold) {
+    if (score < settings.colorVarianceThreshold) {
       return 'Less colours';
     } else {
       return 'Lots of colours';

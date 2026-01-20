@@ -4,6 +4,8 @@ import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/quality_analyzer.dart';
 import '../models/quality_result.dart';
+import '../models/analyzer_settings.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,12 +15,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final QualityAnalyzer _analyzer = QualityAnalyzer();
+  AnalyzerSettings _settings = AnalyzerSettings.defaults;
+  late QualityAnalyzer _analyzer;
   final ImagePicker _picker = ImagePicker();
 
   bool _isAnalyzing = false;
   String? _analyzedImagePath;
   QualityResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    _analyzer = QualityAnalyzer(settings: _settings);
+  }
 
   Future<void> _takePhoto() async {
     try {
@@ -107,12 +116,41 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _openSettings() async {
+    final newSettings = await Navigator.push<AnalyzerSettings>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(currentSettings: _settings),
+      ),
+    );
+
+    if (newSettings != null) {
+      setState(() {
+        _settings = newSettings;
+        _analyzer = QualityAnalyzer(settings: _settings);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Settings updated successfully')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Photo Quality Check'),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _openSettings,
+            tooltip: 'Settings',
+          ),
+        ],
       ),
       body: _isAnalyzing
           ? _buildAnalyzingView()
