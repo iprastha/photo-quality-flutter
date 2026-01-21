@@ -20,7 +20,7 @@ class AnalyzerSettings {
   static const AnalyzerSettings defaults = AnalyzerSettings(
     tooDarkThreshold: 50.0,
     tooBrightThreshold: 200.0,
-    blurThreshold: 100.0,
+    blurThreshold: 50.0,
     colorVarianceThreshold: 20.0,
   );
 
