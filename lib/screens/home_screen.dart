@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final imagePath = await Navigator.push<String>(
         context,
         MaterialPageRoute(
-          builder: (context) => _CameraViewScreen(camera: cameras.first),
+          builder: (context) => _CameraViewScreen(cameras: cameras),
         ),
       );
 
@@ -423,9 +423,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // Simple camera view screen
 class _CameraViewScreen extends StatefulWidget {
-  final CameraDescription camera;
+  final List<CameraDescription> cameras;
 
-  const _CameraViewScreen({required this.camera});
+  const _CameraViewScreen({required this.cameras});
 
   @override
   State<_CameraViewScreen> createState() => _CameraViewScreenState();
@@ -434,16 +434,35 @@ class _CameraViewScreen extends StatefulWidget {
 class _CameraViewScreenState extends State<_CameraViewScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
+  int _currentCameraIndex = 0;
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeCamera(_currentCameraIndex);
+  }
+
+  void _initializeCamera(int cameraIndex) {
     _controller = CameraController(
-      widget.camera,
+      widget.cameras[cameraIndex],
       ResolutionPreset.high,
       enableAudio: false,
     );
     _initializeControllerFuture = _controller.initialize();
+  }
+
+  Future<void> _switchCamera() async {
+    if (widget.cameras.length < 2) return;
+
+    // Dispose current controller
+    await _controller.dispose();
+
+    // Switch to next camera
+    setState(() {
+      _currentCameraIndex = (_currentCameraIndex + 1) % widget.cameras.length;
+      _initializeCamera(_currentCameraIndex);
+    });
   }
 
   @override
@@ -453,6 +472,12 @@ class _CameraViewScreenState extends State<_CameraViewScreen> {
   }
 
   Future<void> _takePicture() async {
+    if (_isProcessing) return; // Prevent multiple clicks
+
+    setState(() {
+      _isProcessing = true;
+    });
+
     try {
       await _initializeControllerFuture;
       final image = await _controller.takePicture();
@@ -461,6 +486,10 @@ class _CameraViewScreenState extends State<_CameraViewScreen> {
         Navigator.pop(context, image.path);
       }
     } catch (e) {
+      setState(() {
+        _isProcessing = false;
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to take picture: $e')),
@@ -479,9 +508,12 @@ class _CameraViewScreenState extends State<_CameraViewScreen> {
           if (snapshot.connectionState == ConnectionState.done) {
             return Stack(
               children: [
-                // Camera preview
-                SizedBox.expand(
-                  child: CameraPreview(_controller),
+                // Camera preview with proper aspect ratio
+                Center(
+                  child: AspectRatio(
+                    aspectRatio: 1 / _controller.value.aspectRatio,
+                    child: CameraPreview(_controller),
+                  ),
                 ),
 
                 // Top bar with close button
@@ -493,13 +525,21 @@ class _CameraViewScreenState extends State<_CameraViewScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: _isProcessing ? null : () => Navigator.pop(context),
                             icon: const Icon(Icons.close),
                             color: Colors.white,
                             iconSize: 32,
                           ),
+                          if (widget.cameras.length > 1)
+                            IconButton(
+                              onPressed: _isProcessing ? null : _switchCamera,
+                              icon: const Icon(Icons.flip_camera_ios),
+                              color: Colors.white,
+                              iconSize: 32,
+                            ),
                         ],
                       ),
                     ),
@@ -525,28 +565,59 @@ class _CameraViewScreenState extends State<_CameraViewScreen> {
                     ),
                     child: Center(
                       child: GestureDetector(
-                        onTap: _takePicture,
-                        child: Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.blue,
-                              width: 4,
+                        onTap: _isProcessing ? null : _takePicture,
+                        child: Opacity(
+                          opacity: _isProcessing ? 0.5 : 1.0,
+                          child: Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              border: Border.all(
+                                color: Colors.blue,
+                                width: 4,
+                              ),
                             ),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.blue,
-                            size: 35,
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.blue,
+                              size: 35,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
+
+                // Loading overlay when processing
+                if (_isProcessing)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Processing...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             );
           } else {
