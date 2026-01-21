@@ -1,6 +1,6 @@
 # Photo Quality Analyzer
 
-A Flutter mobile application that analyzes photo quality using OpenCV to detect common issues like poor lighting, blur, and lack of color diversity.
+A Flutter mobile application that analyzes photo quality using OpenCV and Google ML Kit to detect common issues like poor lighting, blur, lack of color diversity, and face presence.
 
 ## Features
 
@@ -8,6 +8,7 @@ A Flutter mobile application that analyzes photo quality using OpenCV to detect 
 - **Brightness Detection**: Identifies photos that are too dark or too bright
 - **Blur Detection**: Uses variance of Laplacian method to detect blurry images
 - **Color Variance Analysis**: Detects photos with insufficient color diversity
+- **Face Detection**: Uses Google ML Kit to detect and count faces in photos
 
 ### User Interface
 - **Home Screen**: Clean interface with two primary actions
@@ -34,6 +35,7 @@ A Flutter mobile application that analyzes photo quality using OpenCV to detect 
 ### Dependencies
 - **Flutter**: Cross-platform mobile framework
 - **opencv_dart**: OpenCV bindings for image processing
+- **google_mlkit_face_detection**: Google ML Kit for face detection
 - **camera**: Camera access and capture
 - **image_picker**: Gallery image selection
 - **path_provider**: File system access
@@ -55,6 +57,13 @@ A Flutter mobile application that analyzes photo quality using OpenCV to detect 
    - Multi-channel analysis (BGR)
    - Calculates standard deviation across all channels
    - Determines color diversity level
+
+4. **Face Detection**
+   - Uses Google ML Kit's on-device face detection
+   - Detects and counts faces in photos
+   - Fast performance mode optimized for speed
+   - Bundled models (no runtime downloads)
+   - Minimum face size: 10% of image dimensions
 
 ## Setup Instructions
 
@@ -132,7 +141,8 @@ lib/
    - Photo thumbnail is displayed
    - Quality verdict shown (Good/Bad)
    - Detailed metrics with scores and classifications
-   - Color-coded badges (Green = good, Orange = issues)
+   - Color-coded badges (Green = good, Orange/Yellow = issues/warnings)
+   - Face count displayed (Yellow if no faces detected, Green if faces present)
 
 4. **Analyze another photo**
    - Tap "Analyze Another Photo" to return to home screen
@@ -175,6 +185,11 @@ lib/
 - Point at plain white wall → should detect "Less colours"
 - Point at colorful scene → should show "Lots of colours"
 
+**Face Detection Testing:**
+- Take selfie → should detect "1 face"
+- Take group photo → should detect multiple faces
+- Point at landscape/object → should show "No faces" (yellow badge)
+
 **Gallery Testing:**
 - Import dark image from gallery → correct detection
 - Import blurry image → correct detection
@@ -199,6 +214,14 @@ lib/
 - Higher values = more color diversity
 - Lower values = less color variety
 - Default threshold: <20 (less colours)
+
+### Face Count
+- Number of faces detected in the image
+- Uses Google ML Kit face detection
+- Displayed as count (0, 1, 2, etc.)
+- Yellow badge if no faces detected
+- Green badge if faces present
+- On-device processing (privacy-focused)
 
 ## Development
 
@@ -235,6 +258,8 @@ flutter test
 - Settings do not persist between app sessions (in-memory only)
 - Analysis is performed on device (no cloud processing)
 - OpenCV operations may take 1-2 seconds on older devices
+- Face detection optimized for frontal faces (side profiles may not be detected)
+- First app launch extracts ML Kit models (one-time setup)
 
 ## Future Enhancements
 
@@ -242,7 +267,9 @@ flutter test
 - Batch photo analysis
 - Export analysis reports
 - Additional quality metrics (noise, contrast, saturation)
-- ML-based quality assessment
+- Face quality scoring (centered, well-lit, etc.)
+- Draw bounding boxes on detected faces
+- Profile face detection support
 - Photo comparison mode
 - History of analyzed photos
 
@@ -254,6 +281,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Built with Flutter framework
 - OpenCV for image processing
+- Google ML Kit for face detection
 - Variance of Laplacian blur detection method
 - Material Design 3 UI components
 
