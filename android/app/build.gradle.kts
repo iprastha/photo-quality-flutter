@@ -42,3 +42,8 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Bundle Google ML Kit face detection model
+    implementation("com.google.mlkit:face-detection:16.1.7")
+}

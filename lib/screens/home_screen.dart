@@ -338,6 +338,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     _result!.colorVarianceLevel,
                     _result!.colorVarianceLevel == 'Lots of colours',
                   ),
+                  const Divider(height: 16),
+                  _buildMetricRow(
+                    'Faces Detected',
+                    '${_result!.faceCount}',
+                    _result!.faceCount == 0
+                        ? 'No faces'
+                        : _result!.faceCount == 1
+                            ? '1 face'
+                            : '${_result!.faceCount} faces',
+                    _result!.faceCount > 0, // Yellow for no faces, green for faces detected
+                  ),
                 ],
               ),
             ),

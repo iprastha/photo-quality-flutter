@@ -9,6 +9,7 @@ class QualityResult {
   final String blurLevel; // "Too blur", "Normal"
   final double colorVarianceScore;
   final String colorVarianceLevel; // "Lots of colours", "Less colours"
+  final int faceCount; // Number of faces detected
 
   QualityResult({
     required this.isGood,
@@ -19,6 +20,7 @@ class QualityResult {
     required this.blurLevel,
     required this.colorVarianceScore,
     required this.colorVarianceLevel,
+    required this.faceCount,
   });
 
   @override
@@ -26,6 +28,7 @@ class QualityResult {
     return 'QualityResult(isGood: $isGood, reason: $reason, '
         'brightness: ${brightnessScore.toStringAsFixed(2)} ($brightnessLevel), '
         'blur: ${blurScore.toStringAsFixed(2)} ($blurLevel), '
-        'colorVariance: ${colorVarianceScore.toStringAsFixed(2)} ($colorVarianceLevel))';
+        'colorVariance: ${colorVarianceScore.toStringAsFixed(2)} ($colorVarianceLevel), '
+        'faces: $faceCount)';
   }
 }

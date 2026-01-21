@@ -1,4 +1,5 @@
 import 'package:opencv_dart/opencv_dart.dart' as cv;
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../models/quality_result.dart';
 import '../models/analyzer_settings.dart';
 
@@ -33,6 +34,9 @@ class QualityAnalyzer {
 
       image.dispose();
 
+      // 4. Detect faces using Google ML Kit
+      final faceCount = await _detectFaces(imagePath);
+
       // Determine overall quality and reason
       final issues = <String>[];
       if (brightnessLevel == 'Too dark') issues.add('too dark');
@@ -52,6 +56,7 @@ class QualityAnalyzer {
         blurLevel: blurLevel,
         colorVarianceScore: colorVarianceScore,
         colorVarianceLevel: colorVarianceLevel,
+        faceCount: faceCount,
       );
     } catch (e) {
       return _createErrorResult('Analysis failed: $e');
@@ -135,6 +140,30 @@ class QualityAnalyzer {
     }
   }
 
+  /// Detect faces in the image using Google ML Kit
+  Future<int> _detectFaces(String imagePath) async {
+    try {
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final faceDetector = FaceDetector(
+        options: FaceDetectorOptions(
+          enableLandmarks: false,
+          enableClassification: false,
+          enableTracking: false,
+          performanceMode: FaceDetectorMode.fast,
+          minFaceSize: 0.1, // Minimum face size (10% of image)
+        ),
+      );
+
+      final faces = await faceDetector.processImage(inputImage);
+      await faceDetector.close();
+
+      return faces.length;
+    } catch (e) {
+      print('Face detection error: $e');
+      return 0;
+    }
+  }
+
   /// Create an error result
   QualityResult _createErrorResult(String message) {
     return QualityResult(
@@ -146,6 +175,7 @@ class QualityAnalyzer {
       blurLevel: 'Unknown',
       colorVarianceScore: 0.0,
       colorVarianceLevel: 'Unknown',
+      faceCount: 0,
     );
   }
 }

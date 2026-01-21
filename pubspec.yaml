@@ -42,6 +42,9 @@ dependencies:
   # OpenCV for image quality analysis
   opencv_dart: ^1.0.4
 
+  # Google ML Kit for face detection
+  google_mlkit_face_detection: ^0.11.1
+
   # Path and file system utilities
   path_provider: ^2.1.1
   path: ^1.8.3
