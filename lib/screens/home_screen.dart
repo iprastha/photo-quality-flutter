@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/quality_analyzer.dart';
+import '../services/face_recognition_service.dart';
 import '../models/quality_result.dart';
 import '../models/analyzer_settings.dart';
 import 'settings_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   AnalyzerSettings _settings = AnalyzerSettings.defaults;
   late QualityAnalyzer _analyzer;
+  late FaceRecognitionService _recognitionService;
   final ImagePicker _picker = ImagePicker();
 
   bool _isAnalyzing = false;
@@ -26,7 +29,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _analyzer = QualityAnalyzer(settings: _settings);
+    _recognitionService = FaceRecognitionService();
+    _analyzer = QualityAnalyzer(
+      settings: _settings,
+      faceRecognitionService: _recognitionService,
+    );
   }
 
   Future<void> _takePhoto() async {
@@ -127,7 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (newSettings != null) {
       setState(() {
         _settings = newSettings;
-        _analyzer = QualityAnalyzer(settings: _settings);
+        _analyzer = QualityAnalyzer(
+          settings: _settings,
+          faceRecognitionService: _recognitionService,
+        );
       });
 
       if (mounted) {
@@ -138,6 +148,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _openProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfileScreen(
+          recognitionService: _recognitionService,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,6 +166,11 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Photo Quality Check'),
         backgroundColor: Colors.blue,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: _openProfile,
+            tooltip: 'Face Profile',
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _openSettings,
@@ -349,6 +375,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             : '${_result!.faceCount} faces',
                     _result!.faceCount > 0, // Yellow for no faces, green for faces detected
                   ),
+                  // Face recognition row (only show if profile exists)
+                  if (_result!.hasEnrolledProfile == true) ...[
+                    const Divider(height: 16),
+                    _buildFaceRecognitionRow(),
+                  ],
                 ],
               ),
             ),
@@ -425,6 +456,63 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFaceRecognitionRow() {
+    if (_result!.faceMatch == null) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Face Recognition',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.grey),
+            ),
+            child: const Text(
+              'No match',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final match = _result!.faceMatch!;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          'Face Recognition',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: match.isMatch
+                ? Colors.green.withValues(alpha: 0.1)
+                : Colors.orange.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: match.isMatch ? Colors.green : Colors.orange,
+            ),
+          ),
+          child: Text(
+            match.isMatch ? 'Matched (${match.confidence})' : 'Not matched',
+            style: TextStyle(
+              color: match.isMatch ? Colors.green[700] : Colors.orange[700],
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
           ),
         ),
       ],

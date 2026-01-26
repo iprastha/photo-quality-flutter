@@ -1,3 +1,5 @@
+import 'face_match_result.dart';
+
 class QualityResult {
   final bool isGood;
   final String reason;
@@ -11,6 +13,10 @@ class QualityResult {
   final String colorVarianceLevel; // "Lots of colours", "Less colours"
   final int faceCount; // Number of faces detected
 
+  // Face recognition
+  final FaceMatchResult? faceMatch; // Null if no profile or no faces detected
+  final bool? hasEnrolledProfile; // Is there an enrolled profile?
+
   QualityResult({
     required this.isGood,
     required this.reason,
@@ -21,6 +27,8 @@ class QualityResult {
     required this.colorVarianceScore,
     required this.colorVarianceLevel,
     required this.faceCount,
+    this.faceMatch,
+    this.hasEnrolledProfile,
   });
 
   @override
@@ -29,6 +37,7 @@ class QualityResult {
         'brightness: ${brightnessScore.toStringAsFixed(2)} ($brightnessLevel), '
         'blur: ${blurScore.toStringAsFixed(2)} ($blurLevel), '
         'colorVariance: ${colorVarianceScore.toStringAsFixed(2)} ($colorVarianceLevel), '
-        'faces: $faceCount)';
+        'faces: $faceCount, '
+        'faceMatch: ${faceMatch?.isMatch}, hasProfile: $hasEnrolledProfile)';
   }
 }

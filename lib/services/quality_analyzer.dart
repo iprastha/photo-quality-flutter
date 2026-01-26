@@ -2,12 +2,17 @@ import 'package:opencv_dart/opencv_dart.dart' as cv;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../models/quality_result.dart';
 import '../models/analyzer_settings.dart';
+import '../models/face_match_result.dart';
+import 'face_recognition_service.dart';
 
 class QualityAnalyzer {
   final AnalyzerSettings settings;
+  final FaceRecognitionService? faceRecognitionService;
 
-  QualityAnalyzer({AnalyzerSettings? settings})
-      : settings = settings ?? AnalyzerSettings.defaults;
+  QualityAnalyzer({
+    AnalyzerSettings? settings,
+    this.faceRecognitionService,
+  }) : settings = settings ?? AnalyzerSettings.defaults;
 
   /// Analyzes the quality of an image file
   /// Returns QualityResult with comprehensive quality metrics
@@ -34,8 +39,27 @@ class QualityAnalyzer {
 
       image.dispose();
 
-      // 4. Detect faces using Google ML Kit
-      final faceCount = await _detectFaces(imagePath);
+      // 4. Detect faces using Google ML Kit with landmarks
+      final faces = await _detectFacesWithLandmarks(imagePath);
+      final faceCount = faces.length;
+
+      // 5. Face recognition (if service available and faces detected)
+      FaceMatchResult? faceMatch;
+      bool? hasEnrolledProfile;
+
+      if (faceRecognitionService != null) {
+        hasEnrolledProfile = await faceRecognitionService!.hasEnrolledProfile();
+
+        if (hasEnrolledProfile && faceCount > 0) {
+          // Take the largest face (most prominent)
+          Face largestFace = faces.reduce((a, b) =>
+            a.boundingBox.width * a.boundingBox.height >
+            b.boundingBox.width * b.boundingBox.height ? a : b
+          );
+
+          faceMatch = await faceRecognitionService!.recognizeFace(largestFace, imagePath);
+        }
+      }
 
       // Determine overall quality and reason
       final issues = <String>[];
@@ -57,6 +81,8 @@ class QualityAnalyzer {
         colorVarianceScore: colorVarianceScore,
         colorVarianceLevel: colorVarianceLevel,
         faceCount: faceCount,
+        faceMatch: faceMatch,
+        hasEnrolledProfile: hasEnrolledProfile,
       );
     } catch (e) {
       return _createErrorResult('Analysis failed: $e');
@@ -140,27 +166,27 @@ class QualityAnalyzer {
     }
   }
 
-  /// Detect faces in the image using Google ML Kit
-  Future<int> _detectFaces(String imagePath) async {
+  /// Detect faces in the image using Google ML Kit with landmarks
+  Future<List<Face>> _detectFacesWithLandmarks(String imagePath) async {
     try {
       final inputImage = InputImage.fromFilePath(imagePath);
       final faceDetector = FaceDetector(
         options: FaceDetectorOptions(
-          enableLandmarks: false,
+          enableLandmarks: true, // Enable landmarks for face recognition
           enableClassification: false,
           enableTracking: false,
-          performanceMode: FaceDetectorMode.fast,
-          minFaceSize: 0.1, // Minimum face size (10% of image)
+          performanceMode: FaceDetectorMode.accurate, // Accurate mode for landmarks
+          minFaceSize: 0.15, // Slightly larger minimum for reliable landmarks
         ),
       );
 
       final faces = await faceDetector.processImage(inputImage);
       await faceDetector.close();
 
-      return faces.length;
+      return faces;
     } catch (e) {
       print('Face detection error: $e');
-      return 0;
+      return [];
     }
   }
 
